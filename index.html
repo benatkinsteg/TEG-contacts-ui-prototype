@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<title>Contacts – Prototype v5</title>
+<style>
+  :root{--navy:#24263a;--yellow:#f5c400;--ink:#1f2330;--muted:#6b7080;--line:#e4e6ec;--bg:#f6f7f9;--accent:#2f6fde;--red:#c8382e;--gold:#e8a800}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Poppins","Segoe UI",system-ui,sans-serif;color:var(--ink);background:#eceef2;height:100vh;overflow:hidden}
+  button{font-family:inherit}
+  /* ---------- Background Exchange page ---------- */
+  .rail{position:fixed;left:0;top:0;bottom:0;width:68px;background:var(--navy);display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:22px}
+  .rail .logo{color:#fff;font-weight:700;font-size:20px;letter-spacing:1px}
+  .rail .ic{width:68px;height:52px;display:flex;align-items:center;justify-content:center;color:#cfd2dc;font-size:20px}
+  .rail .ic.on{background:var(--yellow);color:var(--navy)}
+  .dash{position:fixed;left:68px;right:0;top:0;bottom:0;background:#fff;overflow:hidden}
+  .top{display:flex;align-items:center;padding:12px 24px 0;gap:14px}
+  .top h1{font-weight:500;color:#666;margin:0;font-size:24px;flex:1}
+  .pl{background:var(--yellow);color:var(--navy);border:0;font-weight:600;letter-spacing:1px;padding:9px 16px;border-radius:3px}
+  .bd{background:var(--navy);color:#fff;border:0;font-weight:600;letter-spacing:1px;padding:9px 16px;border-radius:3px}
+  .ticon{width:40px;height:40px;border-radius:6px;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#555;font-size:20px;position:relative}
+  .ticon:hover{background:#f0f1f4}
+  .ticon.contacts::after{content:"Contacts";position:absolute;top:46px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;opacity:0;pointer-events:none;transition:opacity .15s}
+  .ticon.contacts:hover::after{opacity:1}
+  .acct{text-align:right;font-size:12px;color:#444;padding:4px 24px 0}
+  .acct span{border:1px solid #ccc;padding:2px 6px;margin-left:4px}
+  .tabs{display:flex;gap:18px;justify-content:center;font-size:13px;color:#444;padding:22px 0 8px;border-bottom:1px solid #ddd;white-space:nowrap}
+  .tabs b{border-bottom:3px solid var(--navy);padding-bottom:6px;font-weight:500}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:12px 170px 0}
+  .ph{background:#f0f0f0;border:1px solid #ddd;text-align:center;padding:9px;font-weight:600;font-size:14px;color:#444}
+  .panel{background:#f7f7f7;border:1px solid #ddd;height:250px;margin-top:8px;padding:10px;font-size:14px;font-weight:600;color:#444}
+  .panel .blue{background:#d6e3fb;border:1px solid #9fb8ea;height:160px;margin-top:20px}
+  .bk{background:#fff;border:2px solid #f0b400;height:52px;margin-top:8px}
+  .scrim{position:fixed;z-index:4;inset:0;background:rgba(30,32,45,.45);transition:opacity .2s;opacity:0;pointer-events:none}
+  .note{position:fixed;left:84px;bottom:14px;font-size:12px;color:#fff;background:rgba(0,0,0,.55);padding:6px 10px;border-radius:6px;z-index:1}
+
+  /* ---------- Drawer ---------- */
+  .drawer{position:fixed;z-index:5;top:0;right:0;bottom:0;width:440px;max-width:100vw;background:#fff;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.18);transition:transform .25s,width .25s}
+  .drawer.closed{transform:translateX(105%)}
+  .drawer.wide{width:calc(100vw - 68px)}
+  .dh{display:flex;align-items:center;gap:10px;padding:18px 22px 12px;flex-wrap:wrap}
+  .dh h2{margin:0;font-size:22px;font-weight:600}
+  .count{font-size:12px;color:var(--muted);font-weight:500;background:var(--bg);padding:2px 9px;border-radius:10px}
+  .dh .sp{flex:1}
+  .x{border:0;background:none;font-size:22px;color:#888;cursor:pointer;width:34px;height:34px;border-radius:6px}
+  .x:hover{background:var(--bg)}
+  .btn{font-size:13px;height:38px;border-radius:8px;border:1px solid #cfd3dc;background:#fff;padding:0 14px;cursor:pointer;color:var(--ink);white-space:nowrap}
+  .btn:hover{background:#f7f8fa}
+  .btn.primary{background:var(--yellow);border-color:var(--yellow);font-weight:600;color:var(--navy)}
+  .btn.primary:hover{filter:brightness(.97)}
+  .btn.danger{color:var(--red);border-color:#efc9c6}
+  .btn.danger:hover{background:#fdf2f1}
+  .btn.ghost{border-color:transparent;background:var(--bg)}
+  .btn.sm{height:32px;font-size:12px;padding:0 12px}
+  .tools{display:flex;gap:10px;align-items:center;padding:0 22px 12px;flex-wrap:wrap}
+  .search{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;border:1px solid #cfd3dc;border-radius:8px;padding:0 12px;height:38px;background:#fff}
+  .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,222,.15)}
+  .search input{border:0;outline:0;flex:1;font:inherit;font-size:14px;background:none}
+  .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px;gap:2px}
+  .seg button{white-space:nowrap;border:0;background:none;padding:0 12px;height:30px;border-radius:6px;font-size:13px;color:var(--muted);cursor:pointer;font-weight:500}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600}
+  .body{flex:1;min-height:0;overflow:auto;border-top:1px solid var(--line)}
+  .star{border:0;background:none;cursor:pointer;font-size:16px;color:#c9ccd4;padding:2px 4px;line-height:1}
+  .star.on{color:var(--gold)}
+  .star:hover{color:var(--gold)}
+  .av{width:34px;height:34px;border-radius:50%;background:#e3ecfb;color:#2f5fb3;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none}
+  .muted{color:var(--muted)}
+  .ns{color:var(--muted)}
+  mark{background:#ffe680;padding:0 1px;border-radius:2px}
+  .icbtn{width:34px;height:34px;border-radius:8px;border:1px solid #cfd3dc;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#444}
+  .icbtn:hover{background:var(--bg)}
+  .tbar{max-width:560px}
+  .ct tr.lt td{background:var(--bg);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;padding:5px 14px;border-bottom:1px solid var(--line)}
+  .notein{width:100%;font:inherit;font-size:14px;border:1px solid #cfd3dc;border-radius:6px;padding:8px 10px;resize:vertical}
+  .empty{color:var(--muted);text-align:center;padding:50px 20px;font-size:14px}
+
+  /* Compact (normal) view */
+  .letter{position:sticky;top:0;background:var(--bg);font-size:11px;font-weight:700;color:var(--muted);padding:4px 22px;letter-spacing:.5px;z-index:1}
+  .row{padding:11px 22px;border-bottom:1px solid #f0f1f4;cursor:pointer;display:flex;gap:10px;align-items:center}
+  .row:hover{background:#fafbfc}
+  .row.sel{background:#eef3fc;box-shadow:inset 3px 0 0 var(--accent)}
+  .rn{font-weight:600;font-size:14px}
+  .rs{font-size:12px;color:var(--muted);margin-top:1px}
+  .card{padding:16px 22px 18px;background:#fff;border-bottom:1px solid var(--line)}
+  .ctop{display:flex;align-items:flex-start;gap:8px}
+  .ctitle{font-size:17px;font-weight:700;text-transform:uppercase;flex:1}
+  .csub{font-size:14px;font-weight:600;margin:12px 0 8px}
+  .kv{display:grid;grid-template-columns:120px 1fr;row-gap:9px;column-gap:10px;font-size:13px}
+  .kv .k{color:var(--muted)}
+  .noteitem{background:none;border:0;border-radius:0;padding:0;font-size:13px;white-space:pre-wrap}
+  .cbtns{display:flex;gap:8px;margin-top:14px}
+  .cbtns .btn{flex:1}
+
+  /* Expanded table view */
+  .tablewrap{padding:0 22px 22px}
+  .tablewrap{overflow-x:auto}
+  table.ct{width:100%;min-width:1050px;border-collapse:separate;border-spacing:0;font-size:13px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .ct th{position:sticky;top:0;background:#f7f7f5;text-align:left;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:12px 14px;border-bottom:1px solid var(--line);z-index:1}
+  .ct td{white-space:nowrap;padding:12px 14px;border-bottom:1px solid #f0f1f4;vertical-align:middle}
+  .ct tr.r{cursor:pointer}
+  .ct tr.r:hover td{background:#f6f8fb}
+  .ct tr:last-child td{border-bottom:0}
+  .cname{display:flex;align-items:center;gap:10px}
+  .cname b{font-weight:600;font-size:14px}
+  .sub2{font-size:12px;color:var(--muted);margin-top:1px}
+  .mono{font-variant-numeric:tabular-nums;letter-spacing:.2px}
+  .ct a{color:#2f5fb3;text-decoration:none}
+  .notecell{max-width:240px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* Split (detail) view */
+  .split{flex:1;min-height:0;display:grid;grid-template-columns:360px 1fr;border-top:1px solid var(--line)}
+  .slist{overflow:auto;border-right:1px solid var(--line);background:#fcfcfb}
+  .slist .lhead{position:sticky;top:0;background:#f4f4f1;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:12px 20px;border-bottom:1px solid var(--line);z-index:1;display:flex;justify-content:space-between}
+  .sitem{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid #eeefec;cursor:pointer;align-items:flex-start}
+  .sitem:hover{background:#fafaf7}
+  .sitem.sel{background:#eef3fc;box-shadow:inset 3px 0 0 var(--accent)}
+  .sdetail{overflow:auto;background:#f8f8f6}
+  .crumbbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--line);background:#fff}
+  .back{border:0;background:none;font-size:15px;font-weight:600;cursor:pointer;color:var(--ink);display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;margin-left:-8px}
+  .back:hover{background:var(--bg)}
+  .crumb{font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+  .crumb b{color:var(--ink);font-weight:600}
+  .dhead{display:flex;align-items:center;gap:16px;padding:22px 28px;background:#fff;border-bottom:1px solid var(--line)}
+  .dhead .av{width:56px;height:56px;font-size:18px}
+  .dhead h3{margin:0;font-size:22px;font-weight:600}
+  .dhead .sp{flex:1}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:22px 28px 28px}
+  .pcard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+  .pcard.full{grid-column:1 / -1}
+  .pcard h5{margin:0 0 12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .ro-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px}
+  .ro-grid .full{grid-column:1 / -1}
+  .rlab{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
+  .rval{background:#f4f4f2;border:1px solid #ecece8;border-radius:6px;padding:10px 12px;font-size:14px;min-height:40px}
+  .big{font-size:16px;font-weight:600}
+
+  /* Modals, toast */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:30}
+  .modal{background:#fff;border-radius:12px;padding:22px 24px;width:420px;max-width:92vw}
+  .modal h3{margin:0 0 8px}
+  .modal p{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .modal .r{display:flex;justify-content:flex-end;gap:8px}
+  .modal.form{max-height:92vh;overflow:auto;width:480px}
+  .form label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  .form input,.form select,.form textarea{width:100%;font:inherit;font-size:14px;border:1px solid #cfd3dc;border-radius:6px;padding:8px 10px;background:#fff}
+  .form select{height:40px}
+  .form .req{color:#d9534f}
+  .form input.ro{background:#f3f3f4;color:#444;cursor:not-allowed}
+  .form .bad{border-color:var(--red)!important}
+  .asearch{position:relative;display:flex;align-items:center;border:1px solid #cfd3dc;border-radius:6px;padding:0 0 0 10px}
+  .asearch:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,222,.15)}
+  .asearch input{border:0!important;outline:0}
+  .adrop{position:absolute;left:-1px;right:-1px;top:100%;margin-top:4px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:40;max-height:240px;overflow:auto;display:none}
+  .aopt{padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f2f3f5}
+  .aopt:hover,.aopt.on{background:#eef3fd}
+  .anone{padding:10px 12px;font-size:13px;color:var(--muted)}
+  .ferr{color:var(--red);font-size:12px;margin-top:4px;display:none}
+  .dupe{background:#fff4d6;border:1px solid #f0d27a;color:#6d5000;font-size:12px;padding:8px 10px;border-radius:6px;margin-top:10px;display:none}
+  .chk{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px}
+  .chk input{width:auto}
+  .toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;padding:12px 16px;border-radius:8px;font-size:14px;display:none;align-items:center;gap:14px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .toast button{background:none;border:0;color:var(--yellow);font-weight:700;cursor:pointer;font-size:14px}
+  @media (max-width:900px){.split{grid-template-columns:1fr}.slist{display:none}.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- Background Exchange page (static) -->
+<div class="rail"><div class="logo">TEG</div><div class="ic on">⇄</div><div class="ic">£</div><div class="ic">▮▮</div></div>
+<div class="dash">
+  <div class="top">
+    <h1>Operations</h1>
+    <button class="pl">POST LOAD</button>
+    <button class="bd">BOOK DIRECT</button>
+    <button class="bd" onclick="openInvoice()">CREATE INVOICE</button>
+    <button class="ticon contacts" onclick="openDrawer()" aria-label="Contacts">
+      <svg width="24" height="26" viewBox="0 0 24 26" fill="none" stroke="#6b6f7a" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
+        <rect x="5" y="1.5" width="15.5" height="23" rx="2"/>
+        <path d="M3 6.5h4M3 11h4M3 15.5h4M3 20h4"/>
+        <path d="M10.6 8.2c.5-.5 1.2-.4 1.5.1l.9 1.4c.3.4.2 1-.2 1.3l-.6.5c.4 1.1 1.2 2 2.3 2.5l.5-.6c.3-.4.9-.5 1.3-.2l1.4.9c.5.3.6 1 .1 1.5l-.7.7c-.7.7-1.8.8-2.7.3-2.1-1.1-3.7-2.8-4.7-4.9-.4-.9-.3-1.9.3-2.6z"/>
+      </svg>
+    </button>
+    <button class="ticon" aria-label="Settings">⚙</button>
+    <button class="ticon" aria-label="Profile" style="border-radius:50%;background:#e4e6ea">●</button>
+  </div>
+  <div class="acct">Current Account:<span>TEG COMPANY DEMO - GB 112 ▾</span></div>
+  <div class="tabs"><b>DASHBOARD</b><span>DIRECTORY</span><span>FUTURE POSITIONS</span><span>LIVE AVAILABILITY</span><span>MY FLEET</span><span>RETURN JOURNEYS</span><span>LOADS</span><span>QUOTES</span><span>DIARY</span><span>RUNSHEET</span><span>CALENDAR</span><span>FREIGHT VISION</span><span>DRIVERS &amp; VEHICLES</span></div>
+  <div class="grid">
+    <div><div class="ph">Reports &amp; Statistics</div><div class="panel">Gross Margin<div class="blue"></div></div></div>
+    <div><div class="ph">Activity 'at a glance'</div><div class="panel">Latest Bookings<div class="bk"></div><div class="bk"></div><div class="bk"></div></div></div>
+  </div>
+</div>
+<style>
+  /* v3 additions */
+  .addbar{width:100%;height:40px;border:1px solid #cfd3dc;border-radius:8px;background:#fff;font-size:14px;font-weight:500;color:var(--ink);cursor:pointer}
+  .addbar:hover{background:#f7f8fa}
+  .seg.full{display:flex;width:100%}
+  .seg.full button{flex:1}
+  .tbar{max-width:440px}
+  .drawer.wide .dh{align-items:center;flex-wrap:nowrap}
+  .drawer.wide .dh .icbtn,.drawer.wide .dh .x{flex:none}
+  /* Search icon (SVG, matches UI) */
+  .sicon{flex:none;width:18px;height:18px;color:#6b7080;display:block}
+  /* Compact tools: search + square add on one row (396px), All / Preferred underneath (46px tall, sized to labels) */
+  .toolsv{display:flex;flex-direction:column;gap:10px;padding:0 22px 14px}
+  .srow{display:flex;gap:10px;align-items:center}
+  .srow .search,.wtools .search{flex:1 1 auto;min-width:0;height:46px;border-radius:8px}
+  .search input{font-size:15px;min-width:0}
+  .addsq{flex:none;width:46px;height:46px;border:1px solid #cfd3dc;border-radius:8px;background:#fff;color:var(--ink);font-size:24px;font-weight:300;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+  .addsq:hover{background:#f7f8fa}
+  .addsq:focus-visible{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,222,.15)}
+  .toolsv .seg.full,.wtools .seg.full{display:inline-flex;width:auto;flex:none;height:46px;border-radius:8px;padding:2px;align-items:stretch;align-self:flex-start}
+  .toolsv .seg.full button,.wtools .seg.full button{flex:none;height:auto;font-size:13px;padding:0 14px}
+  /* Expanded tools: own row under the header - + far left, search fills the space, All / Preferred far right */
+  .wtwrap{padding:0 22px 14px;transition:padding .22s ease}
+  .wtools{display:flex;gap:10px;align-items:center;width:100%}
+  .wtools .seg.full{align-self:center}
+  /* Long addresses in the expanded table are cut short with an ellipsis; the full address shows on hover */
+  .addrcell{max-width:300px}
+  .addrcell div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Add/edit form: single column in compact, multi-column grid in expanded */
+  .fgrid{display:block}
+  .drawer.wide .fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:20px;max-width:1400px}
+  .drawer.wide .fgrid .span2{grid-column:span 2}
+  .drawer.wide .fgrid .full{grid-column:1/-1}
+  .drawer.wide .dfoot{justify-content:flex-end}
+  .asearch .sicon{margin-right:2px}
+  .rowwrap{border-bottom:1px solid #f0f1f4}
+  .rowwrap .row{border-bottom:0}
+  .inl{padding:4px 22px 16px}
+  .inl .csub{margin-top:2px}
+  .dfoot{display:flex;gap:10px;padding:12px 22px;border-top:1px solid var(--line);background:#fff}
+  .dfoot .btn{flex:1;height:40px}
+  .btn.primary:disabled{opacity:.45;cursor:not-allowed}
+  .ct tr.r.picked td{background:#eef3fc}
+  /* in-drawer form */
+  .fbody{flex:1;min-height:0;overflow:auto;padding:4px 22px 18px;border-top:1px solid var(--line)}
+  .fbody label{display:block;font-size:12px;color:var(--muted);margin:12px 0 4px}
+  .fbody input,.fbody select,.fbody textarea{width:100%;font:inherit;font-size:14px;border:1px solid #cfd3dc;border-radius:6px;padding:8px 10px;background:#fff}
+  .fbody select{height:40px}
+  .fbody .req{color:#d9534f}
+  .fbody input.ro{background:#f3f3f4;color:#444;cursor:not-allowed}
+  .fbody .bad{border-color:var(--red)!important}
+  .fbody .chk{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;color:var(--ink)}
+  .fbody .chk input{width:auto}
+  /* Post Load mock */
+  .pl-bg{position:fixed;inset:0;left:68px;background:rgba(30,32,45,.35);display:none;align-items:flex-start;justify-content:center;z-index:3;padding-top:40px}
+  .plm{background:#fff;width:760px;max-width:92%;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.25);overflow:hidden}
+  .pl-h{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line)}
+  .pl-h h3{margin:0;font-size:22px;font-weight:600}
+  .pl-sec{background:#eef4fb;color:#2f5fb3;font-weight:600;font-size:14px;padding:10px 22px;border-bottom:1px solid #dfe8f5}
+  .pl-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;padding:16px 22px}
+  .pl-grid label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .pl-grid input{width:100%;font:inherit;font-size:14px;border:1px solid #cfd3dc;border-radius:6px;padding:8px 10px}
+  .lookup{display:flex;gap:6px;align-items:center}
+  .bookbtn{width:40px;height:38px;border:1px solid #cfd3dc;border-radius:6px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+  .bookbtn:hover{background:#eef3fd;border-color:var(--accent)}
+  .custcard{grid-column:1 / -1;background:#f7f9fc;border:1px solid #dfe5ef;border-radius:8px;padding:10px 14px;font-size:13px;display:none}
+  .pl-f{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--line)}
+  .stepnote{font-size:12px;color:#8a6500;background:#fff8dc;border:1px solid #f3e3a6;border-radius:6px;padding:6px 10px;margin:12px 22px 0}
+  /* ---- Post Load mock (matches live form) ---- */
+  .plm.plx{width:1040px;max-width:94%;max-height:92vh;display:flex;flex-direction:column;border-radius:4px}
+  .plx-body{flex:1;min-height:0;overflow:auto}
+  .plx-h{display:flex;align-items:center;gap:20px;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);position:relative;z-index:1;background:#fff}
+  .plx-title{position:relative;padding-top:12px}
+  .plx-new{position:absolute;top:-4px;left:0;background:#ffe14d;font-size:12px;padding:0 5px;font-weight:600;line-height:18px}
+  .plx-title h3{margin:0;font-size:32px;font-weight:400;line-height:1.1}
+  .plx-tabs{display:flex;border:1px solid #c9d6ea;border-radius:3px;overflow:hidden}
+  .plx-tabs button{border:0;border-left:1px solid #c9d6ea;background:#fff;color:#2f80ed;font-size:15px;padding:8px 14px;cursor:pointer;font-family:inherit}
+  .plx-tabs button:first-child{border-left:0}
+  .plx-tabs button.on,.plx-seg button.on{background:#4d94f5;color:#fff}
+  .plx-h{flex-wrap:wrap}.plx-tabs button,.plx-saved,.plx label.plx-chk{white-space:nowrap}
+  .plx-saved{border:1px solid #e3e7ee;background:#fff;color:#c4cbd6;font-size:15px;padding:9px 18px;border-radius:3px}
+  .plx-link{color:#2f80ed;font-size:15px;text-decoration:none;text-align:center;line-height:1.15}
+  .plx-sec{display:flex;align-items:center;gap:16px;background:#e3eefb;padding:14px 24px;color:#1f3a5f}
+  .plx-st{font-size:24px}
+  .plx-two .plx-st{flex:1}
+  .plx-priv{background:#8aa1bd;color:#fff;font-size:12px;letter-spacing:1px;padding:5px 9px;border-radius:2px}
+  .plx-note{color:#6b7a90;font-size:16px}
+  .plx-chev{font-size:20px;color:#1f3a5f;line-height:1}
+  .plx-cust{display:grid;grid-template-columns:1fr 1fr;padding:22px 24px 34px}
+  .plx-cl{padding-right:26px;border-right:1px dashed #ccd3dd}
+  .plx-cr{padding-left:30px;display:flex;flex-direction:column;gap:10px}
+  .plx label{display:block;font-size:16px;color:#2a2f3a;margin:14px 0 8px}
+  .plx-row{display:flex;align-items:center;gap:8px}
+  .plx-in{display:flex;align-items:center;border:1px solid #d5d9e0;border-radius:2px;height:44px;background:#fff;padding:0 12px;gap:8px}
+  .plx-in input{border:0;outline:0;flex:1;font:inherit;font-size:16px;min-width:0;background:none}
+  .plx-in input::placeholder,.plx-txt::placeholder{color:#b7bfcb}
+  .plx-search{flex:1;min-width:0}
+  .plx-mag .sicon{width:20px;height:20px;color:#4d94f5}
+  .plx-pp{align-items:flex-start;gap:26px}
+  .plx-price{width:200px}
+  .plx-price input{text-align:right}
+  .plx label.plx-chk{display:flex;align-items:center;gap:12px;margin:0;font-size:16px;line-height:1.2}
+  .plx-chk input{width:20px;height:20px;margin:0}
+  .plx-refrow{display:flex;align-items:flex-end;gap:36px}
+  .plx-txt{border:1px solid #d5d9e0;border-radius:2px;height:44px;padding:0 14px;font:inherit;font-size:16px;width:230px}
+  .plx-cd{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:16px 24px 26px}
+  .plx-req{color:#e5534b;margin-left:2px}
+  .plx-cc{height:44px;border:1px solid #d5d9e0;border-radius:2px;padding:0 8px;font:inherit;font-size:16px;background:#fff;width:82px}
+  .plx-seg{display:flex;border:1px solid #c9d6ea;border-radius:2px;overflow:hidden}
+  .plx-seg button{flex:1;border:0;border-left:1px solid #c9d6ea;background:#fff;color:#2f80ed;height:44px;font-size:16px;cursor:pointer;font-family:inherit}
+  .plx-seg button:first-child{border-left:0}
+  .plx-lt{color:#9aa3b0;font-size:15px}
+  .plx-day,.plx-hm{height:46px;border:1px solid #d5d9e0;border-radius:2px;font:inherit;font-size:16px;background:#fff;padding:0 10px}
+  .plx-day{width:170px}.plx-hm{width:95px}.plx-colon{color:#555}
+  .plx-dist{font-size:32px;font-weight:700;color:#d5d9e0}
+  .plx-i{display:inline-flex;width:18px;height:18px;border-radius:50%;background:#4d94f5;color:#fff;font-size:12px;align-items:center;justify-content:center;font-style:italic;margin-left:6px;vertical-align:middle}
+  .plx-stop{display:flex;align-items:center;gap:14px;color:#2f80ed;font-size:24px;padding:18px 24px;background:#f7faff}
+  .plx-plus{width:34px;height:34px;border:1px solid #7fb0f5;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:22px}
+  .plx .bookbtn{width:38px;height:44px;border:0;border-radius:2px;background:#eaf2fe}
+  .plx .bookbtn:hover{background:#d8e7fd}
+  .plx .bookbtn svg{stroke:#2f80ed}
+  /* ---- Create Invoice mock ---- */
+  .plm.inv{width:880px}
+  .inv-card{padding:22px 26px 26px}
+  .inv label{display:block;font-size:16px;color:#2a2f3a;margin:6px 0 10px}
+  .inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:22px}
+  .inv-grid3{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:28px}
+  .inv-txt{width:100%;height:56px;border:1px solid #d5d9e0;border-radius:2px;padding:0 14px;font:inherit;font-size:17px;background:#fff}
+  .inv-wrap{position:relative}
+  .inv-drop{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid #d5d9e0;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:40;display:none}
+  .inv-opts{max-height:260px;overflow:auto}
+  .inv-opt{padding:16px 22px;font-size:17px;color:#555;border-bottom:1px solid #eceef2;cursor:pointer}
+  .inv-opt:hover,.inv-opt:first-child{background:#ececec}
+  .inv-none{padding:14px 22px;font-size:15px;color:var(--muted)}
+  .inv-add{display:block;width:100%;text-align:left;border:0;border-top:1px solid #e3e6ec;background:#fff;color:#2f80ed;font-size:17px;padding:12px 12px;cursor:pointer;font-family:inherit}
+  .inv-add:hover{background:#f4f8ff}
+  /* Contact page: plain layout, no boxes */
+  .cards .pcard{background:none;border:0;border-radius:0;padding:0 0 18px;border-bottom:1px solid var(--line)}
+  .cards .pcard:last-child{border-bottom:0}
+  .ro-grid .rval{background:none;border:0;border-radius:0;padding:0;min-height:0}
+  .sdetail{background:#fff}
+  .inl .kv>div:not(.k){color:var(--muted)}
+  /* Contact page (expanded): values in the same grey as their labels */
+  .cards .kv>div:not(.k),.cards .kv>div:not(.k) a,.cards .noteitem{color:var(--muted)!important}
+  /* Expanded table: email in the same dark text colour as the phone number */
+  .ct a{color:inherit}
+  /* Expanded table: fits the screen, no sideways scrolling; long text wraps to at most 2 lines (full text on hover) */
+  .tablewrap{overflow-x:visible}
+  table.ct{min-width:0;table-layout:fixed}
+  .ct td{white-space:normal;vertical-align:middle}
+  .ct .clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word;word-break:normal}
+  .ct .clamp a{overflow-wrap:anywhere}
+  .ct .cname{align-items:center}
+  .ct .cname b{min-width:0}
+  .ct .cname .star{flex:none}
+</style>
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<div class="note">Prototype – sample data only. Try the Contacts icon in the header, POST LOAD (Contacts icons beside customer, collect from and deliver to) or CREATE INVOICE (customer search, no Contacts icon).</div>
+
+<!-- Post Load (mock of the live form: Customer, Collection and Delivery) -->
+<div class="pl-bg" id="plModal"><div class="plm plx">
+  <div class="plx-h">
+    <div class="plx-title"><span class="plx-new">New</span><h3>Post Load</h3></div>
+    <div class="plx-tabs plx-tgl"><button class="on">On Demand</button><button>Regular Load</button><button>Daily Hire</button></div>
+    <button class="plx-saved" disabled>Open Saved Loads</button>
+    <span style="flex:1"></span>
+    <a class="plx-link" href="#" onclick="event.preventDefault()">Close All<br>Optional</a>
+    <button class="x" onclick="closePostLoad()" aria-label="Close">✕</button>
+  </div>
+  <div class="plx-body">
+    <div class="plx-sec"><span class="plx-st">Customer</span><span class="plx-priv">PRIVATE</span><i class="plx-note">Only you can see these details.</i></div>
+    <div class="plx-cust">
+      <div class="plx-cl">
+        <label>Enter / Lookup Your Customer</label>
+        <div class="plx-row"><div class="plx-in plx-search"><input id="plCust" placeholder="Start typing the customer name"><span class="plx-mag"><svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></span></div><button class="bookbtn" onclick="openDrawer('pick','cust')" title="Open Contacts" aria-label="Open Contacts"></button></div>
+        <div class="plx-row plx-pp">
+          <div><label>Customer Price</label><div class="plx-in plx-price"><span>£</span><input value="0.00"></div></div>
+          <div><label>Proof of Delivery</label><label class="plx-chk"><input type="checkbox"> Hard copy POD required</label></div>
+        </div>
+      </div>
+      <div class="plx-cr">
+        <div class="plx-refrow"><div><label>Your Ref</label><input class="plx-txt" placeholder="000000"></div><label class="plx-chk"><input type="checkbox"> Send to Sub-<br>contractor</label></div>
+        <div class="plx-refrow"><div><label>Customer Ref</label><input class="plx-txt" placeholder="000000"></div><label class="plx-chk"><input type="checkbox"> Send to Sub-<br>contractor</label></div>
+      </div>
+    </div>
+    <div class="plx-sec plx-two"><span class="plx-st">Collection</span><span class="plx-st">Delivery</span><span class="plx-chev">⌃</span></div>
+    <div class="plx-cd">
+      <div>
+        <label>Collect from<span class="plx-req">*</span></label>
+        <div class="plx-row"><div class="plx-in plx-search"><span class="plx-mag"><svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></span><input id="plCol" placeholder="Type full postcode or contact name"></div><select class="plx-cc" id="plColCc"></select><button class="bookbtn" onclick="openDrawer('pick','col')" title="Open Contacts" aria-label="Open Contacts"></button></div>
+        <label>Date &amp; Time<span class="plx-req">*</span></label>
+        <div class="plx-seg plx-tgl"><button class="on">Between</button><button>At</button><button>Before</button></div>
+        <label>From<span class="plx-req">*</span> <span class="plx-lt">Local Time</span></label><div class="plx-row"><select class="plx-day"><option>Today</option><option>Tomorrow</option></select><select class="plx-hm" id="plFh"></select><span class="plx-colon">:</span><select class="plx-hm" id="plFm"></select></div>
+        <label>To<span class="plx-req">*</span> <span class="plx-lt">Local Time</span></label><div class="plx-row"><select class="plx-day"><option>Today</option><option>Tomorrow</option></select><select class="plx-hm" id="plTh"></select><span class="plx-colon">:</span><select class="plx-hm" id="plTm"></select></div>
+      </div>
+      <div>
+        <label>Deliver to<span class="plx-req">*</span></label>
+        <div class="plx-row"><div class="plx-in plx-search"><span class="plx-mag"><svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></span><input id="plDel" placeholder="Type full postcode or contact name"></div><select class="plx-cc" id="plDelCc"></select><button class="bookbtn" onclick="openDrawer('pick','del')" title="Open Contacts" aria-label="Open Contacts"></button></div>
+        <label>Date &amp; Time<span class="plx-req">*</span></label>
+        <div class="plx-seg plx-tgl"><button class="on">ASAP</button><button>At</button><button>By</button><button>Between</button></div>
+        <label>Delivery distance <span class="plx-i">i</span></label><div class="plx-dist">0 miles</div>
+      </div>
+    </div>
+    <div class="plx-stop"><span class="plx-plus">+</span> Add Stop</div>
+    <div class="plx-sec plx-two"><span class="plx-st">Job Details</span><span class="plx-chev">⌃</span></div>
+  </div>
+  <div class="pl-f"><button class="btn" onclick="closePostLoad()">Cancel</button><button class="btn" style="background:#3aa757;color:#fff;border-color:#3aa757" onclick="toast('Post Load submitted (prototype)');closePostLoad()">Post Load</button></div>
+</div></div>
+
+<!-- Create Invoice (mock: customer search only - no Contacts icon) -->
+<div class="pl-bg" id="invModal"><div class="plm inv">
+  <div class="pl-h"><h3>Create Invoice</h3><span class="muted" style="font-size:12px">Prototype mock – customer search only</span><span style="flex:1"></span><button class="x" onclick="closeInvoice()" aria-label="Close">✕</button></div>
+  <div class="inv-card">
+    <div class="inv-grid">
+      <div><label>Customer</label><div class="inv-wrap"><input id="invCust" class="inv-txt" placeholder="Start typing customer name or ID" autocomplete="off" oninput="invSearch()" onfocus="invSearch()"><div class="inv-drop" id="invDrop"></div></div></div>
+      <div><label>Your ref</label><input class="inv-txt" placeholder="Your ref"></div>
+    </div>
+    <div class="inv-grid3">
+      <div><label>Invoice date</label><input class="inv-txt" id="invDate"></div>
+      <div><label>Payment terms</label><select class="inv-txt"><option>14 Days (From Invoice)</option><option>30 Days (End Of Month)</option></select></div>
+      <div><label>Due date</label><input class="inv-txt" id="invDue"></div>
+    </div>
+  </div>
+  <div class="pl-f"><button class="btn" onclick="closeInvoice()">Cancel</button></div>
+</div></div>
+
+<aside class="drawer closed" id="drawer"></aside>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastBtn" style="display:none">Undo</button></div>
+
+<!-- Remove contact confirm (matches current Exchange wording) -->
+<div class="modal-bg" id="delModal"><div class="modal">
+  <h3>Remove contact</h3>
+  <p id="delText"></p>
+  <div class="r"><button class="btn" onclick="hide('delModal')">Cancel</button><button class="btn" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="doDelete()">Remove contact</button></div>
+</div></div>
+
+<script>
+/* ---------------- Data ---------------- */
+let id=1;
+const mk=(co,name,a1,a2,town,pc,country,phone,email,pref,note,fileAs)=>({id:id++,co,name,addr:a1,addr2:a2,town,pc,country,phone,email,pref,note:note||"",fileAs:fileAs||"contact"});
+let contacts=[
+  mk("Apex Same-Day","Tanya Brooks","12 Mill Lane","","Leeds","LS1 4AB","GB","0113 496 0123","tanya@apex-example.co.uk",true,"Goods-in closes at 4pm. Loading bay is round the back – use the Mill Lane entrance."),
+  mk("Northern Freight Co","Daniel Hughes","Unit 4","Trafford Park","Manchester","M17 1AA","GB","0161 496 0456","dan@nfc-example.co.uk",true,"Tail-lift required for pallets."),
+  mk("Granite City Couriers","Fiona Mackay","8 Union Street","","Aberdeen","AB11 6BA","GB","01224 496 789","",false),
+  mk("Kern Logistics","Priya Shah","90 Park Lane","","London","W1K 7TN","GB","020 7946 0011","priya@kern-example.co.uk",false),
+  mk("Test Ltd","Mr Test","Test","","Northampton","NN4 5BR","GB","","",false),
+  mk("Bristol Express","Owen Price","Temple Gate","","Bristol","BS1 6QA","GB","0117 496 0222","owen@bx-example.co.uk",false),
+  mk("Midlands Movers","Sarah Collins","Digbeth Coach Station","Digbeth","Birmingham","B5 6DY","GB","0121 496 0333","",false),
+  mk("MATTHEW CLARK","Matthew Clark","ORBITAL WEST","PARKWAY IND EST","Hounslow","TW5 9QA","GB","","",false,"","company"),
+  mk("Pennine Cargo Ltd","Clare Norris","Mount Road","","Leeds","LS6 4DG","GB","0113 496 0741","c.norris@pennine-example.co.uk",false,"Ask for Clare on arrival."),
+  mk("Pennine Cargo Ltd","Pete Nunez","Mount Road","","Leeds","LS6 4DG","GB","0113 496 0748","pete@pennine-example.co.uk",false),
+  mk("Anglesey Haulage & Distribution Services Ltd","Gareth Williams-Pritchard","Unit 14B, Penrhos Industrial Estate Phase Two","Holyhead Road, Llanfairpwllgwyngyll Business Quarter","Llanfairpwllgwyngyll","LL61 5YR","GB","01248 496 0577","gareth.williams-pritchard@anglesey-haulage-example.co.uk",false,"Long address example: check how address line 1, address line 2, town and postcode fit in each view."),
+];
+const ADDRS=[
+  {c:"GB",l:"Madame Tussauds, Marylebone Road, London, NW1 5LR",a1:"Marylebone Road",a2:"",t:"London",p:"NW1 5LR"},
+  {c:"GB",l:"221 Marylebone Road, London, NW1 5QT",a1:"221 Marylebone Road",a2:"",t:"London",p:"NW1 5QT"},
+  {c:"GB",l:"Orbital West, Parkway Industrial Estate, Hounslow, TW5 9QA",a1:"Orbital West",a2:"Parkway Industrial Estate",t:"Hounslow",p:"TW5 9QA"},
+  {c:"GB",l:"12 Mill Lane, Leeds, LS1 4AB",a1:"12 Mill Lane",a2:"",t:"Leeds",p:"LS1 4AB"},
+  {c:"GB",l:"Unit 4, Trafford Park, Manchester, M17 1AA",a1:"Unit 4",a2:"Trafford Park",t:"Manchester",p:"M17 1AA"},
+  {c:"GB",l:"8 Union Street, Aberdeen, AB11 6BA",a1:"8 Union Street",a2:"",t:"Aberdeen",p:"AB11 6BA"},
+  {c:"GB",l:"90 Park Lane, London, W1K 7TN",a1:"90 Park Lane",a2:"",t:"London",p:"W1K 7TN"},
+  {c:"GB",l:"71 Collier Street, London, N1 9BE",a1:"71 Collier Street",a2:"",t:"London",p:"N1 9BE"},
+  {c:"GB",l:"Temple Gate, Bristol, BS1 6QA",a1:"Temple Gate",a2:"",t:"Bristol",p:"BS1 6QA"},
+  {c:"GB",l:"Digbeth Coach Station, Digbeth, Birmingham, B5 6DY",a1:"Digbeth Coach Station",a2:"Digbeth",t:"Birmingham",p:"B5 6DY"},
+  {c:"GB",l:"Unit 2, Riverside Business Park, Dartford, DA1 5PS",a1:"Unit 2",a2:"Riverside Business Park",t:"Dartford",p:"DA1 5PS"},
+  {c:"GB",l:"1 Harbour Road, Margate, CT9 1JD",a1:"1 Harbour Road",a2:"",t:"Margate",p:"CT9 1JD"},
+  {c:"GB",l:"Brackmills Industrial Estate, Northampton, NN4 7PB",a1:"Brackmills Industrial Estate",a2:"",t:"Northampton",p:"NN4 7PB"},
+  {c:"GB",l:"Unit 14B, Penrhos Industrial Estate Phase Two, Holyhead Road, Llanfairpwllgwyngyll Business Quarter, Llanfairpwllgwyngyll, LL61 5YR",a1:"Unit 14B, Penrhos Industrial Estate Phase Two",a2:"Holyhead Road, Llanfairpwllgwyngyll Business Quarter",t:"Llanfairpwllgwyngyll",p:"LL61 5YR"},
+  {c:"IE",l:"Unit 10, Dublin Industrial Estate, Dublin 11, D11 X2Y3",a1:"Unit 10",a2:"Dublin Industrial Estate",t:"Dublin",p:"D11 X2Y3"},
+  {c:"IE",l:"5 Grafton Street, Dublin 2, D02 AB12",a1:"5 Grafton Street",a2:"",t:"Dublin",p:"D02 AB12"},
+];
+
+const COUNTRIES=[["GB","United Kingdom"],["AL","Albania"],["AD","Andorra"],["AT","Austria"],["AZ","Azerbaijan"],["GG","Bailiwick of Guernsey"],["JE","Bailiwick of Jersey"],["BY","Belarus"],["BE","Belgium"],["BA","Bosnia and Herzegovina"],["BG","Bulgaria"],["HR","Croatia"],["CY","Cyprus"],["CZ","Czech Republic"],["DK","Denmark"],["EE","Estonia"],["FI","Finland"],["FR","France"],["GE","Georgia"],["DE","Germany"],["GI","Gibraltar"],["GR","Greece"],["HU","Hungary"],["IS","Iceland"],["IM","Isle of Man"],["IT","Italy"],["KZ","Kazakhstan"],["LV","Latvia"],["LI","Liechtenstein"],["LT","Lithuania"],["LU","Luxembourg"],["MK","Macedonia"],["MT","Malta"],["MD","Moldova"],["MC","Monaco"],["ME","Montenegro"],["MA","Morocco"],["NL","Netherlands"],["NO","Norway"],["PL","Poland"],["PT","Portugal"],["IE","Republic of Ireland"],["RO","Romania"],["RU","Russia"],["SM","San Marino"],["RS","Serbia"],["SK","Slovakia"],["SI","Slovenia"],["ES","Spain"],["SE","Sweden"],["CH","Switzerland"],["TN","Tunisia"],["TR","Turkey"],["UA","Ukraine"],["VA","Vatican City"]];
+const countryName=c=>(COUNTRIES.find(x=>x[0]===c)||[c,c])[1];
+
+/* ---------------- State ---------------- */
+let pickTarget="cust", invMode=false, lastView="compact"; /* production: saved against the user */
+let WT="", view="compact", sel=null, filter="all", pick=false, form=null, formReturn="compact", editing=null, noteOpen=false, aIdx=-1, aRes=[], qText="", plCustomer=null;
+const $=s=>document.getElementById(s);
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function hl(t,q){return esc(t||"");if(!q||!t)return esc(t||"");const i=t.toLowerCase().indexOf(q);if(i<0)return esc(t);return esc(t.slice(0,i))+"<mark>"+esc(t.slice(i,i+q.length))+"</mark>"+esc(t.slice(i+q.length))}
+const dn=c=>c.fileAs==="company"?(c.co||c.name):(c.name||c.co);
+const fullAddr=c=>[c.addr,c.addr2,c.town,c.pc,c.country].filter(Boolean).join(", ");
+const hasAddr=c=>[c.addr,c.addr2,c.town,c.pc].some(Boolean);
+const q=()=>($("q")?$("q").value:qText).trim().toLowerCase();
+const v=x=>x?esc(x):"";
+function visible(){
+  const s=q();
+  return contacts.filter(c=>filter==="all"||c.pref)
+    .filter(c=>!s||[c.name,c.co,c.pc,c.phone,c.email,c.addr,c.addr2,c.town].some(x=>(x||"").toLowerCase().includes(s)))
+    .sort((a,b)=>dn(a).localeCompare(dn(b),"en",{sensitivity:"base"}));
+}
+const ICON_EXPAND='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+const ICON_COLLAPSE='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>';
+const ICON_SEARCH='<svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>';
+const BTN_EXPAND=`<button class="icbtn" onclick="setView('table')" title="Expand view" aria-label="Expand view">${ICON_EXPAND}</button>`;
+const BTN_COLLAPSE=`<button class="icbtn" onclick="setView('compact')" title="Compact view" aria-label="Compact view">${ICON_COLLAPSE}</button>`;
+function starBtn(c,big){return `<button class="star ${c.pref?"on":""}" ${big?'style="font-size:22px"':""} title="${c.pref?"Remove from preferred":"Mark as preferred"}" onclick="event.stopPropagation();togglePref(${c.id})">${c.pref?"★":"☆"}</button>`}
+
+/* ---------------- Render ---------------- */
+function render(){
+  const d=$("drawer");
+  if(form){d.classList.remove("wide");d.innerHTML=formView();initForm();return}
+  const keepFocus=document.activeElement&&document.activeElement.id==="q", caret=keepFocus?$("q").selectionStart:null;
+  if($("q"))qText=$("q").value;
+  d.classList.toggle("wide",view!=="compact");
+  const seg=`<div class="seg full" role="group" aria-label="Show">
+      <button class="${filter==="all"?"on":""}" onclick="setFilter('all')">All</button>
+      <button class="${filter==="pref"?"on":""}" onclick="setFilter('pref')">★ Preferred</button></div>`;
+  const sbox=`<div class="search">${ICON_SEARCH}<input id="q" value="${esc(qText)}" placeholder="Search" aria-label="Search contacts" oninput="render()"></div>`;
+  const addb=`<button class="addsq" onclick="openForm('new')" aria-label="Add new contact">+</button>`;
+  const toolbar=`<div class="tbar"><div class="toolsv"><div class="srow">${addb}${sbox}</div>${seg}</div></div>`;
+  WT=`<div class="wtwrap"><div class="wtools">${addb}${sbox}${seg}</div></div>`;
+  const head=(extra)=>`<div class="dh"><h2>Contacts</h2><span class="sp"></span>${extra}<button class="x" onclick="closeDrawer()" aria-label="Close">✕</button></div>`;
+  const foot=pick&&view==="compact"?`<div class="dfoot"><button class="btn" onclick="closeDrawer()">Cancel</button><button class="btn primary" ${sel?"":"disabled"} onclick="useContact()">Use contact</button></div>`:"";
+  if(view==="compact") d.innerHTML=compactView(head,toolbar)+foot;
+  else if(view==="table") d.innerHTML=tableView(head,toolbar)+foot;
+  else d.innerHTML=detailView(head,toolbar)+foot;
+  if(keepFocus){const i=$("q");i.focus();i.setSelectionRange(caret,caret)}
+  if(noteOpen&&$("noteIn"))$("noteIn").focus();
+}
+function compactView(head,toolbar){
+  const rows=visible(), s=q();
+  let list="",last="";
+  rows.forEach(r=>{const L=(dn(r)||"#")[0].toUpperCase();if(L!==last){list+=`<div class="letter">${L}</div>`;last=L}
+    const sub=[r.fileAs==="company"?r.name:r.co,r.town,r.phone].filter(Boolean);
+    const open=r.id===sel;
+    list+=`<div class="rowwrap"><div class="row ${open?"sel":""}" onclick="selectCompact(${r.id})">
+      <div style="flex:1;min-width:0"><div class="rn">${hl(dn(r)||"(no name)",s)}</div>${sub.length&&!open?`<div class="rs">${sub.map(x=>hl(x,s)).join(" · ")}</div>`:""}</div>
+      ${starBtn(r)}</div>${open?inlineDetails(r):""}</div>`});
+  if(!list)list=emptyState();
+  return head(BTN_EXPAND)+toolbar+`<div class="body">${list}</div>`;
+}
+function inlineDetails(c){
+  return `<div class="inl">
+      <div class="kv">
+        <div class="k">Company name</div><div>${v(c.co)}</div>
+        <div class="k">Contact name</div><div>${v(c.name)}</div>
+        <div class="k">Address</div><div>${hasAddr(c)?esc(fullAddr(c)):""}</div>
+        <div class="k">Phone number</div><div>${v(c.phone)}</div>
+        <div class="k">Email address</div><div>${v(c.email)}</div>
+        ${c.note?`<div class="k">Notes</div><div class="noteitem">${esc(c.note)}</div>`:""}
+      </div>
+      <div class="cbtns"><button class="btn danger" onclick="askDelete(${c.id})">Delete</button><button class="btn" onclick="openForm('edit',${c.id})">Edit</button></div>
+    </div>`;
+}
+function tableView(head,toolbar){
+  const rows=visible(), s=q();
+  let tr="",last="";
+  rows.forEach(c=>{const L=(dn(c)||"#")[0].toUpperCase();if(L!==last){tr+=`<tr class="lt"><td colspan="6">${L}</td></tr>`;last=L}
+    tr+=`<tr class="r ${c.id===sel?"picked":""}" onclick="openInCompact(${c.id})">
+    <td><div class="cname"><b class="clamp">${hl(dn(c)||"(no name)",s)}</b>${starBtn(c)}</div></td>
+    <td><div class="clamp">${c.co?hl(c.co,s):""}</div></td>
+    <td title="${esc(fullAddr(c))}"><div class="clamp">${hasAddr(c)?[c.addr,c.addr2,c.town,c.pc].filter(Boolean).map(x=>hl(x,s)).join(", "):""}</div></td>
+    <td class="mono"><div class="clamp">${c.phone?hl(c.phone,s):""}</div></td>
+    <td><div class="clamp">${c.email?`<a href="#" onclick="event.preventDefault()">${hl(c.email,s)}</a>`:""}</div></td>
+    <td title="${esc(c.note)}"><div class="clamp">${v(c.note)}</div></td></tr>`});
+  return head(BTN_COLLAPSE)+WT+
+    `<div class="body" style="border-top:0"><div class="tablewrap">
+     ${rows.length?`<table class="ct"><colgroup><col style="width:17%"><col style="width:17%"><col style="width:24%"><col style="width:12%"><col style="width:16%"><col style="width:14%"></colgroup><thead><tr><th>Contact</th><th>Company</th><th>Address</th><th>Phone</th><th>Email</th><th>Notes</th></tr></thead><tbody>${tr}</tbody></table>`:emptyState()}
+     </div></div>`;
+}
+function detailView(head,toolbar){
+  const rows=visible(), s=q(), c=contacts.find(x=>x.id===sel);
+  if(!c){view="table";return tableView(head,toolbar)}
+  let left="",last="";
+  rows.forEach(r=>{const L=(dn(r)||"#")[0].toUpperCase();if(L!==last){left+=`<div class="letter">${L}</div>`;last=L}
+    left+=`<div class="sitem ${r.id===sel?"sel":""}" onclick="openDetail(${r.id})">
+     <div style="min-width:0;flex:1"><div class="rn">${hl(dn(r)||"(no name)",s)}</div>${r.phone?`<div class="rs mono">${hl(r.phone,s)}</div>`:""}${r.co?`<div class="rs">${hl(r.co,s)}</div>`:""}</div>
+     ${r.pref?'<span class="star on" style="cursor:default">★</span>':""}</div>`});
+  if(!left)left=`<div class="empty">No contacts match.</div>`;
+  const rv=(label,val,cls="")=>`<div class="${cls}"><div class="rlab">${label}</div><div class="rval">${v(val)}</div></div>`;
+  const notes=c.note?`<div class="noteitem">${esc(c.note)}</div>`
+    :noteOpen?`<textarea id="noteIn" rows="3" maxlength="500" class="notein" placeholder="e.g. Loading bay at rear. Goods-in closes 4pm."></textarea>
+       <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end"><button class="btn ghost sm" onclick="noteOpen=false;render()">Cancel</button><button class="btn primary sm" onclick="saveNote(${c.id})">Save note</button></div>`
+    :`<button class="btn sm" onclick="noteOpen=true;render()">+ Add note</button>`;
+  return head(BTN_COLLAPSE)+WT+
+   `<div class="split">
+      <div class="slist">${left}</div>
+      <div class="sdetail">
+        <div class="crumbbar"><button class="back" onclick="setView('table')">‹&nbsp; Back to all contacts</button></div>
+        <div class="dhead">
+          <div><h3>${esc(dn(c))}</h3></div>
+          ${starBtn(c,true)}
+          <span class="sp"></span>
+          <button class="btn danger" onclick="askDelete(${c.id})">Delete</button>
+          <button class="btn" onclick="openForm('edit',${c.id})">Edit</button>
+        </div>
+        <div class="cards">
+          <div class="pcard"><h5>Company</h5><div class="kv"><div class="k">Company name</div><div>${v(c.co)}</div></div>
+            </div>
+          <div class="pcard"><h5>Contact</h5>
+            <div class="kv"><div class="k">Contact name</div><div>${v(c.name)}</div>
+            <div class="k">Phone</div><div class="mono">${v(c.phone)}</div>
+            <div class="k">Email</div><div>${c.email?`<a href="#" onclick="event.preventDefault()" style="color:#2f5fb3;text-decoration:none">${esc(c.email)}</a>`:""}</div></div></div>
+          <div class="pcard full"><h5>Address</h5>
+            <div class="kv"><div class="k">Country</div><div>${v(countryName(c.country))}</div><div class="k">Address line 1</div><div>${v(c.addr)}</div><div class="k">Address line 2</div><div>${v(c.addr2)}</div><div class="k">City</div><div>${v(c.town)}</div><div class="k">Postcode</div><div>${v(c.pc)}</div></div></div>
+          <div class="pcard full"><h5>Notes</h5>${notes}</div>
+        </div>
+      </div>
+    </div>`;
+}
+function emptyState(){const t=$("q")?$("q").value.trim():qText.trim();
+  return `<div class="empty">${filter==="pref"&&!t?"No preferred contacts yet. Click the ☆ next to a contact to add one.":"No contacts match."}${t?`<br><br><button class="btn" onclick="openForm('new',null,'${esc(t)}')">+ Add “${esc(t)}”</button>`:""}</div>`}
+
+/* ---------------- Actions ---------------- */
+function setView(v){view=v;noteOpen=false;if(v==="compact"||v==="table")lastView=v;render();if(v==="table"&&sel){const r=document.querySelector("#drawer tr.r.picked");if(r)r.scrollIntoView({block:"center"})}}
+function setFilter(f){filter=f;render()}
+function selectCompact(cid){sel=sel===cid?null:cid;render()}
+/* Trial (4 Nov): clicking a row in the expanded view shows that contact in the compact view, details open */
+function openInCompact(cid){sel=cid;noteOpen=false;view="compact";lastView="compact";render();const r=document.querySelector("#drawer .row.sel");if(r)r.scrollIntoView({block:"center"})}
+function openDetail(cid){if(sel!==cid)noteOpen=false;sel=cid;view="detail";render()}
+function togglePref(cid){const c=contacts.find(x=>x.id===cid);c.pref=!c.pref;render();if(view!=="compact")toast(c.pref?"Marked as preferred for your company":"Removed from preferred for your company")}
+function saveNote(cid){const t=$("noteIn").value.trim();noteOpen=false;if(t){contacts.find(x=>x.id===cid).note=t;toast("Contact was successfully updated")}render()}
+function askDelete(cid){sel=cid;const c=contacts.find(x=>x.id===cid);$("delText").innerHTML=`Are you sure you want to remove <b>${esc(dn(c))}</b>?`;show("delModal")}
+function doDelete(){hide("delModal");const i=contacts.findIndex(x=>x.id===sel);contacts.splice(i,1);sel=null;if(view==="detail")view="table";render();toast("Contact was successfully removed")}
+function useContact(){const c=contacts.find(x=>x.id===sel);if(!c)return;
+  const t=pickTarget||"cust";
+  if(t==="cust"){$("plCust").value=dn(c)}
+  else{const id=t==="col"?"plCol":"plDel";$(id).value=[dn(c),c.addr,c.town,c.pc].filter(Boolean).join(", ");const cc=$(id+"Cc");if(cc&&[...cc.options].some(o=>o.value===c.country))cc.value=c.country}
+  closeDrawer();toast(`${dn(c)} added to ${t==="cust"?"Enter / Lookup Your Customer":t==="col"?"Collect from":"Deliver to"}`)}
+let tt;
+function toast(msg){$("toastMsg").textContent="✓ "+msg;$("toast").style.display="flex";clearTimeout(tt);tt=setTimeout(()=>$("toast").style.display="none",2600)}
+function show(i){$(i).style.display="flex"} function hide(i){$(i).style.display="none"}
+function openDrawer(mode,target){pick=mode==="pick";pickTarget=target||"cust";invMode=mode==="invoice";view=lastView;sel=null;form=null;noteOpen=false;qText="";
+  $("drawer").classList.remove("closed");$("scrim").style.opacity=1;$("scrim").style.pointerEvents="auto";render()}
+function closeDrawer(){invMode=false;$("drawer").classList.add("closed");$("scrim").style.opacity=0;$("scrim").style.pointerEvents="none";pick=false;form=null}
+function openPostLoad(){show("plModal")}
+function closePostLoad(){hide("plModal");["plCust","plCol","plDel"].forEach(i=>$(i).value="");["plColCc","plDelCc"].forEach(i=>$(i).value="GB");plCustomer=null}
+/* Post Load mock set-up: country codes, times, toggle groups */
+(function(){
+  ["plColCc","plDelCc"].forEach(i=>{$(i).innerHTML=COUNTRIES.map(([k])=>`<option value="${k}">${k}</option>`).join("")});
+  const now=new Date(),m=Math.ceil(now.getMinutes()/5)*5%60,h=(now.getHours()+(now.getMinutes()>55?1:0))%24,p=n=>String(n).padStart(2,"0");
+  const fill=(id,max,step,val)=>{const e=$(id);for(let i=0;i<max;i+=step)e.insertAdjacentHTML("beforeend",`<option${i===val?" selected":""}>${p(i)}</option>`)};
+  fill("plFh",24,1,h);fill("plFm",60,5,m);fill("plTh",24,1,(h+1)%24);fill("plTm",60,5,m);
+  document.querySelectorAll(".plx-tgl").forEach(g=>g.addEventListener("click",e=>{if(e.target.tagName==="BUTTON")g.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===e.target))}));
+})();
+/* Create Invoice mock: search from 3 characters; "+ Add a contact" opens the compact add form */
+function openInvoice(){const d=new Date(),f=x=>x.toLocaleDateString("en-GB");$("invDate").value=f(d);const due=new Date(d);due.setDate(d.getDate()+14);$("invDue").value=f(due);show("invModal")}
+function closeInvoice(){hide("invModal");$("invCust").value="";$("invDrop").style.display="none"}
+function invSearch(){const t=$("invCust").value.trim().toLowerCase(),d=$("invDrop");
+  if(t.length<3){d.style.display="none";return}
+  const res=contacts.filter(c=>[dn(c),c.name,c.co].some(x=>(x||"").toLowerCase().includes(t))).sort((a,b)=>dn(a).localeCompare(dn(b),"en",{sensitivity:"base"}));
+  d.innerHTML=`<div class="inv-opts">${res.length?res.map(c=>`<div class="inv-opt" onmousedown="event.preventDefault();invPick(${c.id})">${esc(dn(c))}</div>`).join(""):'<div class="inv-none">No matching contacts</div>'}</div><button class="inv-add" onmousedown="event.preventDefault();invAdd()">+ Add a contact</button>`;
+  d.style.display="block"}
+function invPick(cid){const c=contacts.find(x=>x.id===cid);$("invCust").value=dn(c);$("invDrop").style.display="none";$("invCust").blur()}
+function invAdd(){$("invDrop").style.display="none";openDrawer("invoice");openForm("new")}
+document.addEventListener("click",e=>{if(!e.target.closest(".inv-wrap")&&$("invDrop"))$("invDrop").style.display="none"});
+
+/* ---------------- Add / edit form (opens inside the drawer, compact width) ---------------- */
+function openForm(mode,cid,name){form=mode;formReturn=view;editing=mode==="edit"?contacts.find(x=>x.id===cid):null;window._prefill=name||"";render()}
+function closeForm(){if(invMode){form=null;closeDrawer();return}form=null;setView(formReturn)}
+function formView(){
+  const c=editing||{};
+  const req='<span class="req">*</span>';
+  const err=k=>`<div class="ferr" id="e_${k}">This field is required</div>`;
+  return `<div class="dh"><h2>${form==="new"?"Add a new contact":"Edit contact details"}</h2><span class="sp"></span><button class="x" onclick="closeForm()" aria-label="Close">✕</button></div>
+  <div class="fbody"><div class="fgrid">
+    <div class="ff"><label>File by ${req}</label><select id="fFile"><option value="company">Company name</option><option value="contact">Contact name</option></select></div>
+    <div class="ff"><label>Company name ${req}</label><input id="fCo">${err("co")}</div>
+    <div class="ff"><label>Contact name ${req}</label><input id="fName">${err("name")}</div>
+    <div class="ff"><label>Country ${req}</label><select id="fCountry" onchange="clearAddr(true)">
+      ${COUNTRIES.map(([k,n])=>`<option value="${k}">${n}</option>`).join("")}</select></div>
+    <div class="ff span2"><label>Search address ${req}</label>
+    <div class="asearch">${ICON_SEARCH}<input id="fSearch" autocomplete="off" oninput="addrSearch()" onkeydown="addrKey(event)" onfocus="addrSearch()"><div class="adrop" id="adrop"></div></div>${err("addr")}</div>
+    <div class="ff"><label>Address 1</label><input id="fA1"></div>
+    <div class="ff"><label>Address 2</label><input id="fA2"></div>
+    <div class="ff"><label>Town ${req}</label><input id="fTown" readonly class="ro" tabindex="-1" title="This field can’t be edited directly. Select a different address to update it"></div>
+    <div class="ff"><label>Postcode</label><input id="fPc" readonly class="ro" tabindex="-1" title="This field can’t be edited directly. Select a different address to update it"></div>
+    <div class="ff"><label>Phone number</label><input id="fPhone" type="tel"></div>
+    <div class="ff"><label>Email address</label><input id="fEmail" type="email"></div>
+    <div class="ff full"><label>Notes</label><textarea id="fNote" rows="3" maxlength="500" style="resize:vertical"></textarea></div>
+    <div class="ff full"><label class="chk"><input type="checkbox" id="fPref"> Mark as preferred contact</label></div>
+  </div></div>
+  <div class="dfoot"><button class="btn" onclick="closeForm()">Cancel</button><button class="btn primary" onclick="saveForm()">Save</button></div>`;
+}
+const FIELDS=[["fCo","co"],["fName","name"],["fEmail","email"],["fA1","addr"],["fA2","addr2"],["fTown","town"],["fPc","pc"],["fPhone","phone"],["fNote","note"]];
+function initForm(){const c=editing;
+  if(c){FIELDS.forEach(([i,k])=>$(i).value=c[k]||"");$("fCountry").value=c.country||"GB";$("fFile").value=c.fileAs||"contact";$("fPref").checked=!!c.pref;
+    $("fSearch").value=[c.addr,c.addr2,c.town,c.pc].filter(Boolean).join(", ")}
+  else{$("fFile").value="company";if(window._prefill)$("fName").value=window._prefill;$("fFile").focus()}
+}
+function clearAddr(fromCountry){["fA1","fA2","fTown","fPc"].forEach(i=>$(i).value="");if(fromCountry){$("fSearch").value="";closeDrop()}}
+function closeDrop(){const d=$("adrop");if(d)d.style.display="none";aIdx=-1}
+function addrSearch(){
+  const qq=$("fSearch").value.trim().toLowerCase(),cc=$("fCountry").value,d=$("adrop");
+  if(qq.length<2){closeDrop();return}
+  const words=qq.split(/[\s,]+/).filter(Boolean);
+  aRes=ADDRS.filter(a=>a.c===cc&&words.every(w=>a.l.toLowerCase().includes(w))).slice(0,8);aIdx=-1;
+  d.innerHTML=aRes.length?aRes.map((a,i)=>`<div class="aopt" onmousedown="event.preventDefault();pickAddr(${i})">${hlAddr(a.l,words)}</div>`).join("")
+    :`<div class="anone">No addresses found. Check the country or try a different search.</div>`;
+  d.style.display="block";
+}
+function hlAddr(l,words){let s=esc(l);words.forEach(w=>{const re=new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig");s=s.replace(re,"<b>$1</b>")});return s}
+function addrKey(e){
+  const opts=[...document.querySelectorAll("#adrop .aopt")];if(!opts.length)return;
+  if(e.key==="ArrowDown"){aIdx=Math.min(aIdx+1,opts.length-1);e.preventDefault()}
+  else if(e.key==="ArrowUp"){aIdx=Math.max(aIdx-1,0);e.preventDefault()}
+  else if(e.key==="Enter"&&aIdx>=0){pickAddr(aIdx);e.preventDefault();return}
+  else if(e.key==="Escape"){closeDrop();return}
+  opts.forEach((o,i)=>o.classList.toggle("on",i===aIdx));
+}
+function pickAddr(i){const a=aRes[i];$("fSearch").value=a.l;$("fA1").value=a.a1;$("fA2").value=a.a2;$("fTown").value=a.t;$("fPc").value=a.p;
+  closeDrop();$("e_addr").style.display="none";$("fSearch").parentElement.classList.remove("bad")}
+document.addEventListener("click",e=>{if(!e.target.closest(".asearch"))closeDrop()});
+function saveForm(){
+  document.querySelectorAll(".fbody .ferr").forEach(x=>x.style.display="none");document.querySelectorAll(".fbody .bad").forEach(x=>x.classList.remove("bad"));
+  const d={fileAs:$("fFile").value,co:$("fCo").value.trim(),name:$("fName").value.trim(),email:$("fEmail").value.trim(),country:$("fCountry").value,
+    addr:$("fA1").value.trim(),addr2:$("fA2").value.trim(),town:$("fTown").value.trim(),pc:$("fPc").value.trim().toUpperCase(),
+    phone:$("fPhone").value.trim(),note:$("fNote").value.trim(),pref:$("fPref").checked};
+  let ok=true;const bad=(k,el)=>{$("e_"+k).style.display="block";el.classList.add("bad");ok=false};
+  if(!d.co)bad("co",$("fCo"));
+  if(!d.name)bad("name",$("fName"));
+  if(!d.town)bad("addr",$("fSearch").parentElement);
+  if(!ok)return;
+  if(editing){Object.assign(editing,d);sel=editing.id;toast("Contact was successfully updated")}
+  else{const c=mk(d.co,d.name,d.addr,d.addr2,d.town,d.pc,d.country,d.phone,d.email,d.pref,d.note,d.fileAs);contacts.push(c);sel=c.id;toast("Contact was successfully added")}
+  if(invMode){form=null;const c=contacts.find(x=>x.id===sel);$("invCust").value=dn(c);closeDrawer();return}
+  form=null;setView(formReturn==="detail"?"table":formReturn);
+}
+document.querySelectorAll(".bookbtn").forEach(b=>b.innerHTML=document.querySelector(".ticon.contacts svg").outerHTML);
+document.querySelector(".top .pl").setAttribute("onclick","openPostLoad()");
+</script>
+</body>
+</html>
